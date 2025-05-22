@@ -21,7 +21,7 @@ def get_playlist():
     else:
         return "Desteklenmeyen 'type' parametresi.", 400
 
-# Replit için gerekli port ayarı
+#  port ayarı
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
