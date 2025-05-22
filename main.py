@@ -1,8 +1,10 @@
 from flask import Flask, request, Response, jsonify
 import requests
 import os
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 # Sahte kullanıcı verisi
 VALID_USERS = {
@@ -17,6 +19,8 @@ def get_playlist():
     password = request.args.get('password')
     file_type = request.args.get('type', 'm3u')
 
+    app.logger.debug(f"get_playlist called with username={username}, type={file_type}")
+
     if VALID_USERS.get(username) != password:
         return "Geçersiz kullanıcı adı veya şifre", 401
 
@@ -24,7 +28,10 @@ def get_playlist():
         try:
             response = requests.get(M3U_URL, timeout=10)
             response.raise_for_status()
-            return Response(response.text, mimetype='application/x-mpegURL')
+            content = response.text
+            app.logger.debug(f"Playlist content length: {len(content)}")
+
+            return Response(content, mimetype='application/vnd.apple.mpegurl')
         except Exception as e:
             return f"Hata oluştu: {e}", 500
     else:
@@ -48,8 +55,8 @@ def player_api():
                 "max_connections": "1"
             },
             "server_info": {
-                "url": request.host,
-                "port": 443,
+                "url": f"http://{request.host}",
+                "port": 80,
                 "https_port": 443,
                 "server_protocol": "http",
                 "rtmp_port": "25461",
@@ -64,7 +71,6 @@ def player_api():
 def epg():
     return Response("""<?xml version="1.0" encoding="UTF-8"?><tv></tv>""", mimetype="application/xml")
 
-# Port ayarı
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
